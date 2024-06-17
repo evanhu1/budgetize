@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 
 export const Home = () => {
@@ -18,9 +20,9 @@ export const Home = () => {
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                 Phone number
               </label>
-              <input id="phone" className="border w-full p-2 rounded-md text-sm mt-2" type="tel" placeholder="(123) 456-7890" required />
+              <input id="phone" className="border w-full p-2 rounded-md text-sm mt-2 text-black" type="tel" placeholder="(123) 456-7890" required />
             </div>
-            <button type="submit" className="w-full text-white bg-black py-2 rounded-lg text-sm font-semibold">
+            <button type="submit" className="w-full text-white bg-black py-2 rounded-lg text-sm font-semibold" onClick={()=>{alert("Coming Soon")}}>
               Sign up
             </button>
           </form>
