@@ -7,7 +7,7 @@ export const Home = () => {
     <div className="flex h-screen w-full md:items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-4 sm:px-6">
       <div className="mt-8 md:mt-0 mx-auto max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center">
-          <Image className="w-full" src="/logo.png" alt="Budgetize Logo" width={10000} height={100} />
+          <Image className="w-full" src="/assets/logo.png" alt="Budgetize Logo" width={10000} height={100} />
           <p className="mt-2 text-lg font-medium text-white">Spend without guilt</p>
         </div>
         <div className="rounded-xl bg-white p-6 shadow-lg text-center md:text-left">
