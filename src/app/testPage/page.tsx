@@ -26,7 +26,7 @@ const rootNode: Node = {
 const TestPage = () => {
   return (
     <div className="p-6 h-2000">
-      <Tree root={rootNode} depth={0}/>
+      <Tree root={rootNode} depth={0} mode="nav"/>
 
 </div>
   );
