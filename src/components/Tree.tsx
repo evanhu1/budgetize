@@ -33,11 +33,12 @@ export const Tree = ({ root, depth, mode }: TreeProps) => {
                 children: [],
             })
             setNewChildLabel("")
-            setDisplayNewChild(false)
+            setChildrenVisible(true)
         }
     }
 
     const handleAdd = () => {
+        setChildrenVisible(true)
         setDisplayNewChild(true)
     }
 
@@ -46,7 +47,7 @@ export const Tree = ({ root, depth, mode }: TreeProps) => {
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full min-w-80">
             <div className="flex items-center">
                 <div className={"flex my-3 p-2 rounded bg-white border-2 w-full"} style={{ paddingLeft: depth * 20 + 10 }}>
 
