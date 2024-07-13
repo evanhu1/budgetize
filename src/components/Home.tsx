@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useState } from "react";
+import { createClient } from '@supabase/supabase-js'
+import { Auth } from '@supabase/auth-ui-react'
+import { ThemeSupa } from '@supabase/auth-ui-shared'
 
 type Profile = {
   first_name: string;
@@ -18,21 +21,25 @@ type DecodedProfile = {
 };
 
 export const Home = () => {
+
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL as string, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string, {
+    auth: {
+      persistSession: true, // Ensure session persistence is enabled
+    }
+  })
+
   const [profile, setProfile] = useState<Profile | undefined>();
   const router = useRouter();
 
-  const responseMessage = (response: CredentialResponse) => {
-    const decoded = jwtDecode<DecodedProfile>(response.credential!);
-    setProfile({
-      first_name: decoded.given_name,
-      last_name: decoded.family_name,
-      phone: "N/A",
+  const handleGoogleLogin = async () => {
+    console.log("handle google login")
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${location.origin}/auth/callback`,
+      },
     });
-
-    router.push(
-      `/onboarding?first_name=${decoded.given_name}&last_name=${decoded.family_name}&phone=N/A`
-    );
-  };
+  }
 
   return (
     <div className="flex h-screen w-full md:items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-4 sm:px-6">
@@ -56,7 +63,13 @@ export const Home = () => {
           >
             Sign in with Phone Number
           </button>
-          <GoogleLogin onSuccess={responseMessage} />
+
+          <button
+            onClick={() => handleGoogleLogin()}
+            className="w-full bg-black text-white py-2 px-4 rounded-lg text-sm font-semibold"
+          >
+            Sign in with Google
+          </button>
         </div>
       </div>
     </div>

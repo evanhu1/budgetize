@@ -32,6 +32,35 @@ export async function verifyPhoneOtp(formData: FormData) {
   return data;
 }
 
+export async function addPhoneDb(formData: FormData) {
+  const supabase = createClient()
+  const phoneNumber = formData.get('phone') as string;
+  const countryCode = formData.get('countryCode') as string;
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  console.log({session})
+
+  const user = session!.user
+  console.log({user})
+
+
+  if (user != null && user.id) {
+    const { error } = await supabase
+      .from('users')
+      .update({ phone: countryCode + phoneNumber })
+      .eq('id', user.id)
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  } else {
+    throw new Error("User not logged in")
+  }
+}
+
 export async function login(formData: FormData) {
   const supabase = createClient()
 

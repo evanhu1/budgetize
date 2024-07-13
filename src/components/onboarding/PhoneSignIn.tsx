@@ -1,4 +1,4 @@
-import { signInWithPhoneOtp, verifyPhoneOtp } from "@/app/onboarding/actions";
+import { signInWithPhoneOtp, verifyPhoneOtp, addPhoneDb } from "@/app/onboarding/actions";
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 
@@ -8,6 +8,9 @@ const PhoneSignIn = ({ next }: { next: () => void }) => {
   const handlePhoneSubmit = async (formData: FormData) => {
     await signInWithPhoneOtp(formData);
     setShowCodeInput(true);
+    await addPhoneDb(formData);
+
+
   };
 
   return (
