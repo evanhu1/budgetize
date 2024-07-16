@@ -39,6 +39,9 @@ import { TreeNode } from "../categoryTree/Tree";
 import { useCategoryStore } from "@/stores/store";
 import { findCategoryNode } from "@/utils/treeNavigation";
 import Navigator from "../Navigator";
+import { createClient } from "@/utils/supabase/client";
+
+import { Database } from '../../database.types'
 
 const colors = [
   "#FF6384", // Bright Pink
@@ -48,9 +51,14 @@ const colors = [
   "#9966FF", // Purple
 ];
 
+type Tables = Database['public']['Tables']
+
 export default function Dashboard() {
+
+  const supabase = createClient();
   const categories = useCategoryStore((state) => state.categories);
-  const selectedCategoryNode = findCategoryNode(categories, categories[0]?.id);
+  const setCategories = useCategoryStore((state) => state.setCategories);
+  const [selectedCategoryNode, setSelectedCategoryNode] = useState<TreeNode | undefined>(undefined);
 
   const [dateRange, setDateRange] = useState([
     new Date(new Date().setDate(new Date().getDate() - 30)),
@@ -94,12 +102,16 @@ export default function Dashboard() {
     }
   };
   const renderCategoryCards = (category: TreeNode) => {
+    console.log({ category })
+    if (!category) {
+      return <></>
+    }
     return (
       <Card key={category.id} className="w-full">
         <CardHeader>
           <CardTitle>{category.name}</CardTitle>
           <CardDescription>
-            Overview of your {category.name.toLowerCase()}-related expenses
+            Overview of your {category?.name.toLowerCase()}-related expenses
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -122,6 +134,87 @@ export default function Dashboard() {
     );
   };
 
+
+  const createNodeMap = (nodes: Tables['categories']['Row'][]): Map<string, TreeNode> => {
+    const nodeMap = new Map<string, TreeNode>();
+    nodes.forEach(node => {
+      nodeMap.set(node.id, { ...node, children: [] });
+    });
+    return nodeMap;
+  };
+
+  const linkNodes = (nodeMap: Map<string, TreeNode>, connections: Tables['category_paths']['Row'][]): void => {
+    connections.forEach(connection => {
+      const parent = nodeMap.get(connection.ancestor_id);
+      const child = nodeMap.get(connection.descendant_id);
+      if (parent && child) {
+        parent.children.push(child);
+      }
+    });
+  };
+
+  const findRootNodes = (nodes: Tables['categories']['Row'][], connections: Tables['category_paths']['Row'][]): TreeNode[] => {
+    const childIds = new Set(connections.map(connection => connection.descendant_id));
+    return nodes
+      .filter(node => !childIds.has(node.id))
+      .map(node => ({ ...node, children: [] }));
+  };
+
+  const parseTree = (nodes: Tables['categories']['Row'][], connections: Tables['category_paths']['Row'][]): TreeNode[] => {
+    const nodeMap = createNodeMap(nodes);
+    linkNodes(nodeMap, connections);
+    const rootNodes = findRootNodes(nodes, connections);
+
+    // Ensure that the root nodes have their children linked
+    return rootNodes.map(root => nodeMap.get(root.id)!);
+  };
+
+  useEffect(() => {
+
+    const loadCategories = async () => {
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        throw new Error(authError.message)
+      }
+
+      if (!user) {
+        throw new Error("Error retrieving user")
+      }
+
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id, name, user_id')
+        .eq('user_id', user.id)
+        .returns<Tables['categories']['Row'][]>()
+
+      if (categoryError) {
+        throw new Error(categoryError.message)
+      }
+
+      const { data: pathData, error: pathError } = await supabase
+        .from('category_paths')
+        .select('user_id, ancestor_id, descendant_id')
+        .eq('user_id', user.id)
+        .returns<Tables['category_paths']['Row'][]>()
+
+      if (pathError) {
+        throw new Error(pathError.message)
+      }
+
+      const tree: TreeNode[] = parseTree(categoryData, pathData)
+      setCategories(tree)
+      if (tree.length > 0) {
+        setSelectedCategoryNode(tree[0]); // Set to the first root node
+      }
+    }
+
+    loadCategories()
+  }, [])
+
   if (!selectedCategoryNode) {
     return <div>Loading...</div>;
   }
@@ -138,7 +231,7 @@ export default function Dashboard() {
               <div
                 key={category.id}
                 className="bg-muted px-3 py-1 rounded-full bg-neutral-100 cursor-pointer"
-                onClick={() => {}}
+                onClick={() => { }}
               >
                 {category.name}
               </div>

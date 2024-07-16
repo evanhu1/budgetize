@@ -14,6 +14,8 @@ const OnboardingPage = () => {
     const router = useRouter();
     const supabase = createClient();
     const setCategories = useCategoryStore((state) => state.setCategories);
+    const categories = useCategoryStore((state) => state.categories);
+
 
     useEffect(() => {
         const checkUser = async () => {
@@ -23,7 +25,7 @@ const OnboardingPage = () => {
 
             if (user && user.id) {
                 const supabaseUser = await (await fetch(`/api/users?id=${user.id}`)).json()
-                console.log({supabaseUser})
+                console.log({ supabaseUser })
 
                 if (supabaseUser.length == 0) {
                     // Creating a new user if no user with the id is found
@@ -40,16 +42,57 @@ const OnboardingPage = () => {
                 } else if (supabaseUser[0].phone == null) {
                     setStage("set_phone")
                 } else {
-                    setStage("set_buckets")
+                    const { data, error } = await supabase
+                        .from('categories')
+                        .select('id, user_id')
+                        .eq('user_id', user.id)
+                    if (error) {
+                        throw new Error(error.message)
+                    } else if (data.length > 0) {
+                        router.push("/dashboard")
+                    } else {
+                        setStage("set_buckets")
+                    }
+
                 }
             }
         };
         checkUser();
     }, [router, supabase.auth]);
 
-    const handleSaveTreeData = (treeData: TreeNode[]) => {
+    const saveNodeDb = async (node: TreeNode, userId: string, depth: number = 0) => {
+        const { error } = await supabase
+            .from('categories')
+            .upsert({ id: node.id, user_id: userId, name: node.name })
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        for (const childNode of node.children) {
+            await saveNodeDb(childNode, userId, depth + 1)
+            const { error } = await supabase
+                .from('category_paths')
+                .upsert({ ancestor_id: node.id, descendant_id: childNode.id, depth, user_id: userId})
+            if (error) {
+                throw new Error(error.message)
+            }
+        }
+    }
+
+    const handleSaveTreeData = async (treeData: TreeNode[]) => {
         setCategories(treeData);
-        router.push("/dashboard");
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (user != null && user.id) {
+            for (const node of treeData) {
+                saveNodeDb(node, user.id)
+            }
+            router.push("/dashboard");
+        } else {
+            throw new Error("User not logged in")
+        }
+
     };
 
     return (

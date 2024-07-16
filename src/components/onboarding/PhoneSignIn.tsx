@@ -5,11 +5,6 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 
-interface PhoneSignInProps {
-  next: () => void;
-  user: User;
-}
-
 const PhoneSignIn = ({ next }: { next: () => void }) => {
   const [showCodeInput, setShowCodeInput] = useState(false);
   const handlePhoneSubmit = async (formData: FormData) => {
