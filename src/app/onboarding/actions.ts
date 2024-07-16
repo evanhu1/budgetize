@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { createClient } from '@/utils/supabase/server'
+import { User } from '@supabase/supabase-js'
 
 export async function signInWithPhoneOtp(formData: FormData) {
   const supabase = createClient()
@@ -19,40 +20,46 @@ export async function signInWithPhoneOtp(formData: FormData) {
 
 export async function verifyPhoneOtp(formData: FormData) {
   const supabase = createClient()
-  const code = formData.get('code') as string;
-  const phoneNumber = formData.get('phone') as string;
-  const countryCode = formData.get('countryCode') as string;
 
-  const { data, error } = await supabase.auth.verifyOtp({
-    phone: countryCode + phoneNumber,
-    token: code,
-    type: 'sms',
-  })
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  return data;
+  if (user == null) {
+    throw Error("Failed to retrieve user")
+  } else {
+    const code = formData.get('code') as string;
+    const phoneNumber = formData.get('phone') as string;
+    const countryCode = formData.get('countryCode') as string;
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: countryCode + phoneNumber,
+      token: code,
+      type: 'sms',
+    })
+
+    if (error) {
+      throw new Error(error.message);
+    } else {
+      addPhoneDb(formData, user)
+    }
+
+    return data;
+  }
+
+
 }
 
-export async function addPhoneDb(formData: FormData) {
+export async function addPhoneDb(formData: FormData, user: User) {
   const supabase = createClient()
   const phoneNumber = formData.get('phone') as string;
   const countryCode = formData.get('countryCode') as string;
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  console.log({session})
-
-  const user = session!.user
-  console.log({user})
-
 
   if (user != null && user.id) {
     const { error } = await supabase
       .from('users')
       .update({ phone: countryCode + phoneNumber })
       .eq('id', user.id)
-
     if (error) {
       throw new Error(error.message);
     }

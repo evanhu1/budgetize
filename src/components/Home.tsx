@@ -5,9 +5,9 @@ import { redirect, useRouter } from "next/navigation";
 import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { useState } from "react";
-import { createClient } from '@supabase/supabase-js'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
+import { createClient } from "@/utils/supabase/client";
 
 type Profile = {
   first_name: string;
@@ -22,24 +22,18 @@ type DecodedProfile = {
 
 export const Home = () => {
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL as string, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string, {
-    auth: {
-      persistSession: true, // Ensure session persistence is enabled
-    }
-  })
-
+  const supabase = createClient()
   const [profile, setProfile] = useState<Profile | undefined>();
   const router = useRouter();
 
   const handleGoogleLogin = async () => {
-    console.log("handle google login")
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${location.origin}/auth/callback?next=/onboarding`,
       },
     });
-  }
+  };
 
   return (
     <div className="flex h-screen w-full md:items-center justify-center bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] px-4 sm:px-6">

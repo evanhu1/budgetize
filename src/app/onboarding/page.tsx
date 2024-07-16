@@ -5,6 +5,7 @@ import { CategoryCreation } from "@/components/onboarding/CategoryCreation";
 import PhoneSignIn from "@/components/onboarding/PhoneSignIn";
 import { useCategoryStore } from "@/stores/store";
 import { createClient } from "@/utils/supabase/client";
+import { User } from "@supabase/supabase-js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -17,15 +18,12 @@ const OnboardingPage = () => {
     useEffect(() => {
         const checkUser = async () => {
             const {
-                data: { session },
-            } = await supabase.auth.getSession();
-            console.log({ session })
-
-            const user = session!.user
-
+                data: { user },
+            } = await supabase.auth.getUser();
 
             if (user && user.id) {
                 const supabaseUser = await (await fetch(`/api/users?id=${user.id}`)).json()
+                console.log({supabaseUser})
 
                 if (supabaseUser.length == 0) {
                     // Creating a new user if no user with the id is found

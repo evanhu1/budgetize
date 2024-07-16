@@ -1,16 +1,20 @@
+"use client";
+
 import { signInWithPhoneOtp, verifyPhoneOtp, addPhoneDb } from "@/app/onboarding/actions";
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { User } from "@supabase/supabase-js";
+
+interface PhoneSignInProps {
+  next: () => void;
+  user: User;
+}
 
 const PhoneSignIn = ({ next }: { next: () => void }) => {
   const [showCodeInput, setShowCodeInput] = useState(false);
-
   const handlePhoneSubmit = async (formData: FormData) => {
     await signInWithPhoneOtp(formData);
     setShowCodeInput(true);
-    await addPhoneDb(formData);
-
-
   };
 
   return (
