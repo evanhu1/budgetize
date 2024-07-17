@@ -18,48 +18,37 @@ export async function signInWithPhoneOtp(formData: FormData) {
   }
 }
 
-export async function verifyPhoneOtp(formData: FormData) {
+export async function verifyPhoneOtp(formData: FormData, userId: string) {
   const supabase = createClient()
+  const code = formData.get('code') as string;
+  const phoneNumber = formData.get('phone') as string;
+  const countryCode = formData.get('countryCode') as string;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.verifyOtp({
+    phone: countryCode + phoneNumber,
+    token: code,
+    type: 'sms',
+  })
 
-  if (user == null) {
-    throw Error("Failed to retrieve user")
+  if (error) {
+    throw new Error(error.message);
   } else {
-    const code = formData.get('code') as string;
-    const phoneNumber = formData.get('phone') as string;
-    const countryCode = formData.get('countryCode') as string;
-
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: countryCode + phoneNumber,
-      token: code,
-      type: 'sms',
-    })
-
-    if (error) {
-      throw new Error(error.message);
-    } else {
-      addPhoneDb(formData, user)
-    }
-
-    return data;
+    addPhoneDb(formData, userId)
   }
 
-
+  return data;
 }
 
-export async function addPhoneDb(formData: FormData, user: User) {
+export async function addPhoneDb(formData: FormData, userId: string) {
   const supabase = createClient()
   const phoneNumber = formData.get('phone') as string;
   const countryCode = formData.get('countryCode') as string;
 
-  if (user != null && user.id) {
+  if (userId) {
     const { error } = await supabase
       .from('users')
       .update({ phone: countryCode + phoneNumber })
-      .eq('id', user.id)
+      .eq('id', userId)
     if (error) {
       throw new Error(error.message);
     }

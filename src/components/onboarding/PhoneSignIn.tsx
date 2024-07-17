@@ -4,8 +4,10 @@ import { signInWithPhoneOtp, verifyPhoneOtp, addPhoneDb } from "@/app/onboarding
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
 
 const PhoneSignIn = ({ next }: { next: () => void }) => {
+  const supabase = createClient()
   const [showCodeInput, setShowCodeInput] = useState(false);
   const handlePhoneSubmit = async (formData: FormData) => {
     await signInWithPhoneOtp(formData);
@@ -80,12 +82,21 @@ const PhoneSignIn = ({ next }: { next: () => void }) => {
                 type="submit"
                 className="w-full bg-black text-white py-2 rounded-lg text-sm font-semibold"
                 formAction={async (formData) => {
-                  const data = await verifyPhoneOtp(formData);
-                  if (data.session) {
-                    next();
+                  const {
+                    data: { user },
+                  } = await supabase.auth.getUser();
+
+                  if (user == null) {
+                    throw Error("Failed to retrieve user")
                   } else {
-                    alert("Incorrect code");
+                    const data = await verifyPhoneOtp(formData, user.id);
+                    if (data.session) {
+                      next();
+                    } else {
+                      alert("Incorrect code");
+                    }
                   }
+
                 }}
               >
                 Verify Code
